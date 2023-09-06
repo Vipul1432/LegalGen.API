@@ -12,5 +12,8 @@ namespace LegalGen.Domain.Interfaces
     {
         Task<LegalGenUser> GetUserByEmailAsync(string email);
         Task<(bool success, IEnumerable<string> errors)> CreateUserAsync(LegalGenUser user, string password);
+        Task<SignInResult> CheckPasswordAsync(LegalGenUser user, string password);
+        Task SignOutAsync();
+        string GenerateJwtToken(LegalGenUser user);
     }
 }
