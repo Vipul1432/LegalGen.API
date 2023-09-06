@@ -249,6 +249,46 @@ namespace LegalGen.API.Controllers
 
         #endregion ResearchBook Operations
 
+        #region ResearchBook By UserId
+
+        [HttpGet("byUserId/{userId}")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<ResearchBookDto>>>> GetResearchBooksByUserId(string userId)
+        {
+            try
+            {
+                var researchBooks = await _researchBookRepository.GetResearchBooksByUserIdAsync(userId);
+
+                if (researchBooks == null || !researchBooks.Any())
+                {
+                    return NotFound(new ApiResponse<IEnumerable<ResearchBookDto>>
+                    {
+                        Message = "No research books found for the given user.",
+                        Data = null,
+                        StatusCode = 404 // Not Found
+                    });
+                }
+
+                return Ok(new ApiResponse<IEnumerable<ResearchBookDto>>
+                {
+                    Message = "Successfully retrieved research books by user ID.",
+                    Data = _mapper.Map<IEnumerable<ResearchBookDto>>(researchBooks),
+                    StatusCode = 200 // OK
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while getting research books by user ID.");
+                return StatusCode(500, new ApiResponse<IEnumerable<ResearchBookDto>>
+                {
+                    Message = "An error occurred while processing your request.",
+                    Data = null,
+                    StatusCode = 500 // Internal Server Error
+                });
+            }
+        }
+
+        #endregion ResearchBook By UserId
+
         #region LegalInformation Operations
 
         /// <summary>
