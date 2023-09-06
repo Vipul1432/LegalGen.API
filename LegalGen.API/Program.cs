@@ -1,18 +1,26 @@
 using LegalGen.Data.Context;
+using LegalGen.Data.Repository;
 using LegalGen.Data.Services;
 using LegalGen.Domain.Helper;
+using LegalGen.Domain.Helpers;
 using LegalGen.Domain.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using System;
+using Serilog;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+
+//builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
+
+// Configure Serilog to read logging settings from the application's configuration file.
+builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
@@ -52,10 +60,15 @@ Microsoft.Extensions.Configuration.ConfigurationManager Configuration = builder.
 
 // Database connection string configuration
 var connectionStrings = builder.Configuration.GetConnectionString("LegalGenAiEntities");
-builder.Services.AddDbContext<LegalGenDbContext>(options => options.UseSqlServer(
+builder.Services.AddDbContextPool<LegalGenDbContext>(options => options.UseSqlServer(
 connectionStrings, b => b.MigrationsAssembly("LegalGen.Data")));
 
+// Registering scoped services for repository interfaces.
+// This allows for the use of dependency injection to provide instances of these repositories
+// to various parts of the application, ensuring data access is scoped to the current request.
+builder.Services.AddScoped<IResearchBookRepository, ResearchBookRepository>();
 builder.Services.AddTransient<IUserService, UserService>();
+builder.Services.AddScoped<IResearchBookService, ResearchBookService>();
 
 // For Identity 
 builder.Services.AddIdentity<LegalGenUser, IdentityRole>(options =>
@@ -108,3 +121,5 @@ app.UseAuthorization();
 app.MapControllers();
 
 app.Run();
+// Close and flush the Serilog logger when the application exits
+Log.CloseAndFlush();

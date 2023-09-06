@@ -16,16 +16,18 @@ namespace LegalGen.API.Controllers
     {
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
+        private readonly ILogger<RegisterDto> _logger;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserController"/> class.
         /// </summary>
         /// <param name="userService">The repository for user-related operations.</param>
         /// <param name="configuration">The configuration object used for accessing application settings.</param>
-        public UserController(IUserService userService, IConfiguration configuration)
+        public UserController(IUserService userService, IConfiguration configuration, ILogger<RegisterDto> logger)
         {
             _userService = userService;
             _configuration = configuration;
+            _logger = logger;
         }
 
         /// <summary>
@@ -51,9 +53,12 @@ namespace LegalGen.API.Controllers
             // Check If User exists
             var userExists = await _userService.GetUserByEmailAsync(model.Email);
             if (userExists != null)
+            {
+                _logger.LogInformation("User Already exist!");
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new Response { Status = "Error", Message = "User already exists!" });
-
+            }
+            
             LegalGenUser user = new LegalGenUser()
             {
                 UserName = model.Email,
@@ -78,7 +83,7 @@ namespace LegalGen.API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new Response { Status = "Error", Message = errorMessage });
             }
-
+            _logger.LogInformation("User registered successfully!");
             return Ok(new Response { Status = "Success", Message = "User registered successfully!" });
         }
 
@@ -96,6 +101,7 @@ namespace LegalGen.API.Controllers
         {
             if (!ModelState.IsValid)
             {
+                _logger.LogInformation("Invalid user credentials!");
                 return StatusCode(StatusCodes.Status400BadRequest,
                     new Response { Status = "Error", Message = "Invalid user credentials." });
             }
@@ -104,6 +110,7 @@ namespace LegalGen.API.Controllers
             var user = await _userService.GetUserByEmailAsync(model.Email);
             if (user == null)
             {
+                _logger.LogInformation("User not found!");
                 return StatusCode(StatusCodes.Status400BadRequest,
                     new Response { Status = "Error", Message = "User not found!" });
             }
@@ -123,6 +130,7 @@ namespace LegalGen.API.Controllers
             }
             else
             {
+                _logger.LogInformation("Invalid password!");
                 return StatusCode(StatusCodes.Status401Unauthorized,
                      new Response { Status = "Error", Message = "Invalid password." });
             }
@@ -143,6 +151,7 @@ namespace LegalGen.API.Controllers
         public async Task<IActionResult> Logout()
         {
             await _userService.SignOutAsync();
+            _logger.LogInformation("Logged out successfully!");
             return Ok(new Response { Status = "Success", Message = "Logged out successfully!" });
         }
     }
