@@ -19,30 +19,35 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
 // Define and configure Swagger documentation settings for API.
-builder.Services.AddSwaggerGen(c =>
+builder.Services.AddSwaggerGen(option =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo { Title = "LegalGen.API", Version = "v1" });
-    // Add JWT Authentication support in Swagger
-    var securityScheme = new OpenApiSecurityScheme
+    option.SwaggerDoc("v1", new OpenApiInfo { Title = "IdentityApi", Version = "v1" });
+    option.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Name = "JWT Authentication",
-        Description = "Enter your JWT token",
         In = ParameterLocation.Header,
+        Description = "Please Enter a valid Token!",
+        Name = "Authorization",
         Type = SecuritySchemeType.Http,
-        Scheme = "bearer", // Use "bearer" as the scheme for your token
         BearerFormat = "JWT",
-        Reference = new OpenApiReference
+        Scheme = "Bearer"
+    });
+    option.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
         {
-            Type = ReferenceType.SecurityScheme,
-            Id = "Bearer"
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            new string[]{}
         }
-    };
-    c.AddSecurityDefinition("Bearer", securityScheme);
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-        {
-            { securityScheme, new string[] { } }
-        });
+    });
 });
+
+Microsoft.Extensions.Configuration.ConfigurationManager Configuration = builder.Configuration;
 
 
 // Database connection string configuration
@@ -81,9 +86,9 @@ builder.Services.AddAuthentication(options =>
     {
         ValidateIssuer = true,
         ValidateAudience = true,
-        ValidAudience = "JWT:ValidAudience",
-        ValidIssuer = "JWT:ValidIssuer",
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("JWT:Secret"))
+        ValidAudience = Configuration["JWT:ValidAudience"],
+        ValidIssuer = Configuration["JWT:ValidIssuer"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(Configuration["JWT:Secret"]))
     };
 });
 

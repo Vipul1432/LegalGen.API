@@ -138,6 +138,7 @@ namespace LegalGen.API.Controllers
         /// <returns>
         /// A <see cref="Task"/> representing the asynchronous operation.
         /// </returns>
+        [Authorize]
         [HttpPost("logout")]
         public async Task<IActionResult> Logout()
         {
