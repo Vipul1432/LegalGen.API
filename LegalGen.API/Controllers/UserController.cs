@@ -1,12 +1,12 @@
-﻿using JwtAuthentication.Domain.Models;
-using LegalGen.Domain.Dtos;
+﻿using LegalGen.Domain.Dtos;
 using LegalGen.Domain.Helper;
 using LegalGen.Domain.Interfaces;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Configuration;
+using Microsoft.AspNetCore.WebUtilities;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
+using System.Text;
 
 namespace LegalGen.API.Controllers
 {
@@ -17,17 +17,19 @@ namespace LegalGen.API.Controllers
         private readonly IUserService _userService;
         private readonly IConfiguration _configuration;
         private readonly ILogger<RegisterDto> _logger;
+        private readonly IEmailService _emailService;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="UserController"/> class.
         /// </summary>
         /// <param name="userService">The repository for user-related operations.</param>
         /// <param name="configuration">The configuration object used for accessing application settings.</param>
-        public UserController(IUserService userService, IConfiguration configuration, ILogger<RegisterDto> logger)
+        public UserController(IUserService userService, IConfiguration configuration, ILogger<RegisterDto> logger, IEmailService emailService)
         {
             _userService = userService;
             _configuration = configuration;
             _logger = logger;
+            _emailService = emailService;
         }
 
         /// <summary>
@@ -58,7 +60,7 @@ namespace LegalGen.API.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError,
                     new Response { Status = "Error", Message = "User already exists!" });
             }
-            
+
             LegalGenUser user = new LegalGenUser()
             {
                 UserName = model.Email,
@@ -138,6 +140,136 @@ namespace LegalGen.API.Controllers
 
 
         /// <summary>
+        /// Initiates the process of resetting a user's password by sending a password reset link via email.
+        /// </summary>
+        /// <param name="email">The email address of the user requesting a password reset.</param>
+        /// <returns>
+        /// - 200 OK: If the request to send the password reset link is successful.
+        /// - 400 Bad Request: If the request is invalid or cannot be processed.
+        /// </returns>
+        [AllowAnonymous]
+        [HttpPost("forget-password")]
+        public async Task<IActionResult> ForgetPassword([Required] string email)
+        {
+            var user = await _userService.GetUserByEmailAsync(email);
+            if (user != null)
+            {
+                var token = await _userService.GetPasswordResetTokenAsync(user);
+                var encodedToken = Encoding.UTF8.GetBytes(token);
+                var validToken = WebEncoders.Base64UrlEncode(encodedToken);
+
+                var forgetPasswordLink = $"{Request.Scheme}://{Request.Host}/api/user/ResetPassword?token={validToken}&email={user.Email}";
+                var message = new EmailMessage(new string[] { user.Email }, "Forget password link", "<h1>To reset your password.</h1><p><a href='" + forgetPasswordLink! + "'>Click Here</a></p>");
+                _emailService.SendEmail(message);
+
+                _logger.LogInformation("Password change request is sent on Email");
+                return StatusCode(StatusCodes.Status200OK,
+                        new Response { Status = "Success", Message = $"Password change request is sent on Email {user.Email}. Please open your email $ click the link." });
+            }
+            _logger.LogError("Could not send link, please try again.");
+            return StatusCode(StatusCodes.Status400BadRequest,
+                    new Response { Status = "Error", Message = "Could not send link, please try again." });
+        }
+
+
+        /// <summary>
+        /// Resets the user's password with a provided token and new password.
+        /// </summary>
+        /// <param name="resetPassword">A model containing email, token, password, and confirmation password for password reset.</param>
+        /// <returns>
+        /// - 200 OK: If the password is successfully reset.
+        /// - 400 Bad Request: If the request is invalid or cannot be processed due to various reasons.
+        /// </returns>
+        [AllowAnonymous]
+        [HttpPost("ResetPassword")]
+        public async Task<IActionResult> ResetPassword([FromForm] ResetPassword resetPassword)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogError("Some model's properties are not valid.");
+                return StatusCode(StatusCodes.Status400BadRequest,
+                    new Response { Status = "Error", Message = "Some properties are not valid." });
+            }
+            var user = await _userService.GetUserByEmailAsync(resetPassword.Email);
+            if (user != null)
+            {
+                if (resetPassword.Password != resetPassword.ConfirmPassword)
+                {
+                    _logger.LogError("Password & Confirm Password doesn't match.");
+                    return StatusCode(StatusCodes.Status400BadRequest,
+                    new Response { Status = "Error", Message = "Password & Confirm Password doesn't match." });
+                }
+                var decodedToken = WebEncoders.Base64UrlDecode(resetPassword.Token);
+                string normalToken = Encoding.UTF8.GetString(decodedToken);
+
+                var resetPasswordResult = await _userService.CreateResetPasswordAsync(user, normalToken, resetPassword.Password);
+                if (!resetPasswordResult.success)
+                {
+                    var errorMessage = "Cann't reset password. ";
+
+                    foreach (var error in resetPasswordResult.errors)
+                    {
+                        errorMessage += $" {error}";
+                    }
+                    _logger.LogError(errorMessage);
+                    return StatusCode(StatusCodes.Status400BadRequest,
+                        new Response { Status = "Error", Message = errorMessage });
+                }
+
+                var message = new EmailMessage(new string[] { user.Email }, "Password Reset", "Your password has been changed.");
+                _emailService.SendEmail(message);
+
+                _logger.LogInformation("Password has been changed.");
+                return StatusCode(StatusCodes.Status200OK,
+                        new Response { Status = "Success", Message = "Password has been changed." });
+            }
+
+            _logger.LogError("Could not find email, please try again.");
+            return StatusCode(StatusCodes.Status400BadRequest,
+                    new Response { Status = "Error", Message = "Could not find email, please try again." });
+        }
+
+
+        /// <summary>
+        /// Changes the password for the currently authenticated user.
+        /// </summary>
+        /// <param name="model">A model containing the current password and the new password.</param>
+        /// <returns>
+        /// - 200 OK: If the password change is successful.
+        /// - 400 Bad Request: If the password change fails or the request is invalid.
+        /// - 401 Unauthorized: If the user is not authenticated.
+        /// </returns>
+        [Authorize]
+        [HttpPost("change-password")]
+        public async Task<IActionResult> ChangePassword([FromBody] ChangePassword model)
+        {
+            var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim == null)
+            {
+                _logger.LogError("User is not authenticated");
+                return StatusCode(StatusCodes.Status401Unauthorized,
+                        new Response { Status = "Error", Message = "User is not authenticated" });
+            }
+            var userId = userIdClaim.Value;
+            var isPasswordChanged = await _userService.ChangePasswordAsync(userId, model.CurrentPassword, model.NewPassword);
+
+            if (isPasswordChanged)
+            {
+                await _userService.SignOutAsync();
+                _logger.LogInformation("Password changed successfully.");
+                return StatusCode(StatusCodes.Status200OK,
+                        new Response { Status = "Success", Message = "Password changed successfully" });
+            }
+            else
+            {
+                _logger.LogError("Password change failed");
+                return StatusCode(StatusCodes.Status400BadRequest,
+                    new Response { Status = "Error", Message = "Password change failed" });
+            }
+        }
+
+        /// <summary>
         /// Signs the user out of the application.
         /// </summary>
         /// <remarks>
@@ -154,5 +286,6 @@ namespace LegalGen.API.Controllers
             _logger.LogInformation("Logged out successfully!");
             return Ok(new Response { Status = "Success", Message = "Logged out successfully!" });
         }
+
     }
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace JwtAuthentication.Domain.Models
+namespace LegalGen.Domain.Helper
 {
     public class Response
     {

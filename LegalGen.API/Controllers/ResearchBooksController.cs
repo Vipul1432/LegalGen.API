@@ -125,11 +125,7 @@ namespace LegalGen.API.Controllers
         {
             try
             {
-                if (id != researchBookDto.Id)
-                {
-                    return BadRequest();
-                }
-
+                
                 var researchBook = _mapper.Map<ResearchBook>(researchBookDto);
 
                 var updatedResearchBook = await _researchBookRepository.UpdateResearchBookAsync(id, researchBook);
@@ -221,17 +217,21 @@ namespace LegalGen.API.Controllers
 
                 if (!deleted)
                 {
-                    return NotFound();
+                    return NotFound(new ApiResponse<object>
+                    {
+                        Message = "ResearchBook not found.",
+                        Data = null,
+                        StatusCode = 404 // Not Found
+                    });
                 }
                 _logger.LogInformation("Successfully deleted research book!");
-                var response = new ApiResponse<object>
-                {
-                    Message = "Successfully deleted research book.",
-                    Data = null,
-                    StatusCode = 204 // No Content
-                };
 
-                return NoContent();
+                return Ok(new ApiResponse<object>
+                {
+                    Message = "ResearchBook deleted successfully.",
+                    Data = null,
+                    StatusCode = 200 // OK
+                });
             }
             catch (Exception ex)
             {
@@ -251,6 +251,15 @@ namespace LegalGen.API.Controllers
 
         #region ResearchBook By UserId
 
+        /// <summary>
+        /// Retrieves a collection of research books associated with a specific user by their user ID.
+        /// </summary>
+        /// <param name="userId">The unique identifier of the user whose research books are being retrieved.</param>
+        /// <returns>
+        /// - 200 OK: If research books are found and successfully retrieved.
+        /// - 404 Not Found: If no research books are found for the given user.
+        /// - 500 Internal Server Error: If an error occurs while processing the request.
+        /// </returns>
         [HttpGet("byUserId/{userId}")]
         public async Task<ActionResult<ApiResponse<IEnumerable<ResearchBookDto>>>> GetResearchBooksByUserId(string userId)
         {
@@ -260,6 +269,7 @@ namespace LegalGen.API.Controllers
 
                 if (researchBooks == null || !researchBooks.Any())
                 {
+                    _logger.LogError("No research books found for the given user.");
                     return NotFound(new ApiResponse<IEnumerable<ResearchBookDto>>
                     {
                         Message = "No research books found for the given user.",
@@ -268,6 +278,7 @@ namespace LegalGen.API.Controllers
                     });
                 }
 
+                _logger.LogInformation("Successfully retrieved research books by user ID.");
                 return Ok(new ApiResponse<IEnumerable<ResearchBookDto>>
                 {
                     Message = "Successfully retrieved research books by user ID.",
@@ -467,7 +478,12 @@ namespace LegalGen.API.Controllers
                     });
                 }
 
-                return NoContent();
+                return Ok(new ApiResponse<object>
+                {
+                    Message = "LegalInformation deleted successfully.",
+                    Data = null,
+                    StatusCode = 200 // OK
+                });
             }
             catch (Exception ex)
             {

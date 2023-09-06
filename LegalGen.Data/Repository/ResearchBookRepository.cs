@@ -1,4 +1,6 @@
-﻿using LegalGen.Data.Context;
+﻿using AutoMapper;
+using LegalGen.Data.Context;
+using LegalGen.Domain.DTOs;
 using LegalGen.Domain.Interfaces;
 using LegalGen.Domain.Models;
 using Microsoft.EntityFrameworkCore;
@@ -13,10 +15,12 @@ namespace LegalGen.Data.Repository
     public class ResearchBookRepository : IResearchBookRepository
     {
         private readonly LegalGenDbContext _context;
+        private readonly IMapper _mapper;
 
-        public ResearchBookRepository(LegalGenDbContext context)
+        public ResearchBookRepository(LegalGenDbContext context, IMapper mapper)
         {
             _context = context;
+            _mapper = mapper;
         }
 
         /// <summary>
@@ -46,12 +50,11 @@ namespace LegalGen.Data.Repository
         /// <returns>The updated research book.</returns>
         public async Task<ResearchBook> UpdateResearchBookAsync(int id, ResearchBook researchBook)
         {
-            if (!_context.ResearchBooks.Any(rb => rb.Id == id))
-            {
-                return null;
-            }
+            var book = await _context.ResearchBooks.FirstOrDefaultAsync(rb => rb.Id == id);
+            _mapper.Map<ResearchBook>(researchBook);
+            book.LastModified = DateTime.Now;
+            
 
-            _context.Entry(researchBook).State = EntityState.Modified;
             await _context.SaveChangesAsync();
             return researchBook;
         }

@@ -2,7 +2,7 @@
 using LegalGen.Domain.DTOs;
 using LegalGen.Domain.Models;
 
-namespace LegalGen.Domain.Helpers
+namespace LegalGen.Domain.Helper
 {
     public class AutoMapperProfiles : Profile
     {

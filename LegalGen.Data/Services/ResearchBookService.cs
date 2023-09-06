@@ -94,7 +94,7 @@ namespace LegalGen.Data.Services
         /// <returns>True if the legal information was deleted successfully; otherwise, false.</returns>
         public async Task<bool> DeleteLegalInformationByResearchBookIdAsync(int researchBookId, int legalInformationId)
         {
-            var researchBook = await _context.ResearchBooks.FirstOrDefaultAsync(rb => rb.Id == researchBookId);
+            var researchBook = await _context.ResearchBooks.Include(rb => rb.LegalInformation).FirstOrDefaultAsync(rb => rb.Id == researchBookId);
             if (researchBook == null)
             {
                 return false;
