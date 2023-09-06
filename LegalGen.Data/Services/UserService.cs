@@ -107,6 +107,7 @@ namespace LegalGen.Data.Services
             var authClaims = new List<Claim>
             {
                 new Claim(ClaimTypes.Name, user.Email),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
             };
 
@@ -126,6 +127,68 @@ namespace LegalGen.Data.Services
 
             // Serialize the JWT token to a string representation
             return new JwtSecurityTokenHandler().WriteToken(jwtToken);
+        }
+
+
+        /// <summary>
+        /// Generates a password reset token for the specified user.
+        /// </summary>
+        /// <param name="user">The user for whom to generate the reset token.</param>
+        /// <returns>A password reset token for the user.</returns>
+        public async Task<string> GetPasswordResetTokenAsync(LegalGenUser user)
+        {
+            return await _userManager.GeneratePasswordResetTokenAsync(user);
+        }
+
+
+        /// <summary>
+        /// Resets the password for a user using the provided reset token and new password.
+        /// </summary>
+        /// <param name="user">The user for whom to reset the password.</param>
+        /// <param name="token">The password reset token.</param>
+        /// <param name="password">The new password to set.</param>
+        /// <returns>
+        /// A tuple indicating the success of the password reset operation and a collection of error messages
+        /// if the operation fails.
+        /// </returns>
+        public async Task<(bool success, IEnumerable<string> errors)> CreateResetPasswordAsync(LegalGenUser user, string token, string password)
+        {
+            var result = await _userManager.ResetPasswordAsync(user, token, password);
+
+            if (result.Succeeded)
+            {
+                return (true, Enumerable.Empty<string>());
+            }
+            else
+            {
+                var errorMessages = result.Errors.Select(error => error.Description);
+                return (false, errorMessages);
+            }
+        }
+
+
+        /// <summary>
+        /// Changes the password for a user with the specified user ID.
+        /// </summary>
+        /// <param name="userId">The unique identifier of the user whose password is being changed.</param>
+        /// <param name="oldPassword">The user's current (old) password.</param>
+        /// <param name="newPassword">The new password to set for the user.</param>
+        /// <returns>
+        /// - True: If the password change operation is successful.
+        /// - False: If the user is not found or if the password change operation fails.
+        /// </returns>
+        public async Task<bool> ChangePasswordAsync(string userId, string oldPassword, string newPassword)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user == null)
+            {
+                return false; // User not found
+            }
+
+            var changePasswordResult = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
+
+            return changePasswordResult.Succeeded;
         }
     }
 }

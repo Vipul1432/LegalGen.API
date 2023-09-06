@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.7.34009.444
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegalGen.API", "LegalGen.API\LegalGen.API.csproj", "{23F7C136-5912-44D3-91A4-E34BD153D0C9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LegalGen.API", "LegalGen.API\LegalGen.API.csproj", "{23F7C136-5912-44D3-91A4-E34BD153D0C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegalGen.Domain", "LegalGen.Domain\LegalGen.Domain.csproj", "{438D1C03-16A4-46FB-99F1-1C72A0DDA114}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LegalGen.Domain", "LegalGen.Domain\LegalGen.Domain.csproj", "{438D1C03-16A4-46FB-99F1-1C72A0DDA114}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "LegalGen.Data", "LegalGen.Data\LegalGen.Data.csproj", "{F178DD42-71AA-44BA-BFCA-E6C667FF76D9}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LegalGen.Data", "LegalGen.Data\LegalGen.Data.csproj", "{F178DD42-71AA-44BA-BFCA-E6C667FF76D9}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

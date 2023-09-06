@@ -2,7 +2,6 @@ using LegalGen.Data.Context;
 using LegalGen.Data.Repository;
 using LegalGen.Data.Services;
 using LegalGen.Domain.Helper;
-using LegalGen.Domain.Helpers;
 using LegalGen.Domain.Interfaces;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
@@ -23,6 +22,8 @@ builder.Services.AddAutoMapper(typeof(AutoMapperProfiles));
 builder.Host.UseSerilog((context, configuration) => configuration.ReadFrom.Configuration(context.Configuration));
 
 builder.Services.AddControllers();
+
+builder.Services.AddRazorPages();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 
@@ -63,12 +64,20 @@ var connectionStrings = builder.Configuration.GetConnectionString("LegalGenAiEnt
 builder.Services.AddDbContextPool<LegalGenDbContext>(options => options.UseSqlServer(
 connectionStrings, b => b.MigrationsAssembly("LegalGen.Data")));
 
+//Email configuration
+var emailConfig = builder.Configuration.GetSection("EmailConfiguration").Get<EmailConfiguration>();
+builder.Services.AddSingleton(emailConfig);
+
 // Registering scoped services for repository interfaces.
 // This allows for the use of dependency injection to provide instances of these repositories
 // to various parts of the application, ensuring data access is scoped to the current request.
 builder.Services.AddScoped<IResearchBookRepository, ResearchBookRepository>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddScoped<IResearchBookService, ResearchBookService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
+
+// Configure the DataProtectionTokenProviderOptions to set the token lifespan to 10 minutes.
+builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(10));
 
 // For Identity 
 builder.Services.AddIdentity<LegalGenUser, IdentityRole>(options =>
@@ -105,6 +114,17 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
+
+
+// Configure CORS (Cross-Origin Resource Sharing) policy
+// Allow requests from any origin ( "*" means all origins)
+// Allow any HTTP method (GET, POST, PUT, DELETE, etc.)
+// Allow any HTTP headers in the request
+builder.Services.AddCors(p => p.AddPolicy("corspolicy", build =>
+{
+    build.WithOrigins("*").AllowAnyMethod().AllowAnyHeader();
+}));
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -115,9 +135,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseCors("corspolicy");
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.MapRazorPages();
 app.MapControllers();
 
 app.Run();
