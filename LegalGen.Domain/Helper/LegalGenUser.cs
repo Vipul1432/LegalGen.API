@@ -16,5 +16,7 @@ namespace LegalGen.Domain.Helper
 
         // Navigation properties
         public ICollection<ResearchBook> ResearchBooks { get; set; }
+        public ICollection<AiChat> AiChats { get; set; }
+
     }
 }
