@@ -1,6 +1,7 @@
 ﻿using LegalGen.Domain.Dtos;
 using LegalGen.Domain.Helper;
 using LegalGen.Domain.Interfaces;
+using LegalGen.Domain.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.WebUtilities;
@@ -266,6 +267,95 @@ namespace LegalGen.API.Controllers
                 _logger.LogError("Password change failed");
                 return StatusCode(StatusCodes.Status400BadRequest,
                     new Response { Status = "Error", Message = "Password change failed" });
+            }
+        }
+
+
+        /// <summary>
+        /// Retrieves the user's profile information based on the authentication token.
+        /// </summary>
+        /// <returns>
+        /// - 200 OK with the user's profile details if authenticated and profile found.
+        /// - 401 Unauthorized with an error message if the user is not authenticated.
+        /// - 404 Not Found with an error message if the user's profile is not found.
+        /// </returns>
+        /// <remarks>
+        /// This endpoint is protected by the [Authorize] attribute, ensuring that only authenticated
+        /// users can access it. It retrieves the user's ID from the authentication token and uses it
+        /// to fetch the user's profile information via the <see cref="_userService"/>.
+        /// Logging is performed to record successful and error cases.
+        /// </remarks>
+        [Authorize]
+        [HttpGet("profile-details")]
+        public async Task<IActionResult> GetUserProfile()
+        {
+            // Get the user's ID from the authentication token
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId == null)
+            {
+                _logger.LogError("User is not authenticated");
+                return StatusCode(StatusCodes.Status401Unauthorized,
+                        new Response { Status = "Error", Message = "User is not authenticated" });
+            }
+
+            // Retrieve the user's profile information (you can customize this based on your data model)
+            var userProfile = await _userService.GetUserProfileAsync(userId);
+
+            if (userProfile == null)
+            {
+                _logger.LogError("User profile not found");
+                return StatusCode(StatusCodes.Status404NotFound,
+                        new Response { Status = "Error", Message = "User profile not found" });
+            }
+            _logger.LogInformation("User retrived successfully");
+            return Ok(userProfile);
+        }
+
+
+        /// <summary>
+        /// Updates the user's profile based on the provided data.
+        /// </summary>
+        /// <param name="model">The <see cref="UserProfile"/> containing the updated profile information.</param>
+        /// <returns>
+        /// - 200 OK with a success message if the profile is updated successfully.
+        /// - 400 Bad Request with an error message if the profile update fails.
+        /// - 401 Unauthorized with an error message if the user is not authenticated.
+        /// </returns>
+        /// <remarks>
+        /// This endpoint is protected by the [Authorize] attribute, ensuring that only authenticated
+        /// users can access it. It retrieves the user's ID from the authentication token and uses it
+        /// to call the <see cref="_userService"/> for profile update. Logging is performed to record
+        /// successful and error cases.
+        /// </remarks>
+        [Authorize]
+        [HttpPut("update-profile")]
+        public async Task<IActionResult> UpdateUserProfile([FromBody] UserProfile model)
+        {
+            // Get the user's ID from the authentication token
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+            if (userId == null)
+            {
+                _logger.LogError("User is not authenticated");
+                return StatusCode(StatusCodes.Status401Unauthorized,
+                        new Response { Status = "Error", Message = "User is not authenticated" });
+            }
+
+            // Call the service to update the user's profile
+            var updated = await _userService.UpdateUserProfileAsync(userId, model);
+
+            if (updated)
+            {
+                _logger.LogInformation("Profile updated successfully");
+                return StatusCode(StatusCodes.Status200OK,
+                        new Response { Status = "Success", Message = "Profile updated successfully" });
+            }
+            else
+            {
+                _logger.LogError("Profile update failed");
+                return StatusCode(StatusCodes.Status400BadRequest,
+                        new Response { Status = "Error", Message = "Profile update failed" });
             }
         }
 
