@@ -75,6 +75,7 @@ builder.Services.AddScoped<IResearchBookRepository, ResearchBookRepository>();
 builder.Services.AddTransient<IUserService, UserService>();
 builder.Services.AddScoped<IResearchBookService, ResearchBookService>();
 builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAiChatService, AiChatService>();
 
 // Configure the DataProtectionTokenProviderOptions to set the token lifespan to 10 minutes.
 builder.Services.Configure<DataProtectionTokenProviderOptions>(options => options.TokenLifespan = TimeSpan.FromMinutes(10));

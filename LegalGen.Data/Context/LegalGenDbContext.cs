@@ -16,5 +16,7 @@ namespace LegalGen.Data.Context
 
         // DbSet for ResearchBook entity
         public DbSet<ResearchBook> ResearchBooks { get; set; }
+        public DbSet<AiChat> AiChats { get; set; }
+
     }
 }
