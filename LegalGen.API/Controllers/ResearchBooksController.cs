@@ -496,8 +496,53 @@ namespace LegalGen.API.Controllers
                 });
             }
         }
-        
+
         #endregion LegalInformation Operations
+
+        #region Filter Serch Result
+
+        /// <summary>
+        /// Searches for legal information based on the specified criteria and returns the results as an API response.
+        /// </summary>
+        /// <param name="criteria">The search criteria including document type, title, and date.</param>
+        /// <returns>An API response containing the search results or an error message with status code.</returns>
+        [HttpGet("search")]
+        public async Task<ActionResult<ApiResponse<IEnumerable<LegalInformation>>>> SearchLegalInformation([FromQuery] SearchCriteria criteria)
+        {
+            try
+            {
+                var legalInformation = await _researchBookService.SearchResearchBooksAsync(criteria);
+
+                if (legalInformation == null || !legalInformation.Any())
+                {
+                    return NotFound(new ApiResponse<IEnumerable<LegalInformation>>
+                    {
+                        Message = "No matching legal information found.",
+                        Data = null,
+                        StatusCode = 404
+                    });
+                }
+
+                return Ok(new ApiResponse<IEnumerable<LegalInformation>>
+                {
+                    Message = "Legal information found.",
+                    Data = legalInformation,
+                    StatusCode = 200
+                });
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions as needed
+                return StatusCode(500, new ApiResponse<IEnumerable<LegalInformation>>
+                {
+                    Message = "An error occurred while processing your request.",
+                    Data = null,
+                    StatusCode = 500
+                });
+            }
+        }
+
+        #endregion Filter Serch Result
 
     }
 }
