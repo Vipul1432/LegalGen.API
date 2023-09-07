@@ -42,5 +42,7 @@ namespace LegalGen.Domain.Interfaces
         /// <returns>True if the legal information was deleted successfully; otherwise, false.</returns>
         Task<bool> DeleteLegalInformationByResearchBookIdAsync(int researchBookId, int legalInformationId);
 
+
+        Task<IEnumerable<LegalInformation>> SearchResearchBooksAsync(SearchCriteria criteria);
     }
 }

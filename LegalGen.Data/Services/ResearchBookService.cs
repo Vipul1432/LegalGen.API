@@ -109,5 +109,28 @@ namespace LegalGen.Data.Services
             await _context.SaveChangesAsync();
             return true;
         }
+
+        public async Task<IEnumerable<LegalInformation>> SearchResearchBooksAsync(SearchCriteria criteria)
+        {
+            var query = _context.ResearchBooks.SelectMany(book => book.LegalInformation).AsQueryable();
+
+            if (!string.IsNullOrEmpty(criteria?.DocumentType))
+            {
+                query = query.Where(li => li.Document == criteria.DocumentType);
+            }
+
+            if (!string.IsNullOrEmpty(criteria?.Title))
+            {
+                query = query.Where(li => li.Title == criteria.Title);
+            }
+
+            if (criteria?.Date != null)
+            {
+                DateTime criteriaDate = criteria.Date.Value;
+                query = query.Where(li => li.DateAdded.Date == criteriaDate.Date);
+            }
+
+            return await query.ToListAsync();
+        }
     }
 }
