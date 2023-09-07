@@ -1,5 +1,8 @@
-﻿using LegalGen.Domain.Helper;
+﻿using AutoMapper;
+using LegalGen.Domain.DTOs;
+using LegalGen.Domain.Helper;
 using LegalGen.Domain.Interfaces;
+using LegalGen.Domain.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
@@ -18,12 +21,16 @@ namespace LegalGen.Data.Services
         private readonly UserManager<LegalGenUser> _userManager;
         private readonly SignInManager<LegalGenUser> _signInManager;
         private readonly IConfiguration _configuration;
+        private readonly IMapper _mapper;
 
         public UserService(UserManager<LegalGenUser> userManager,
-            SignInManager<LegalGenUser> signInManager, IConfiguration configuration)
+            SignInManager<LegalGenUser> signInManager,
+            IMapper mapper,
+            IConfiguration configuration)
         {
             _userManager = userManager;
             _signInManager = signInManager;
+            _mapper = mapper;
             _configuration = configuration;
         }
 
@@ -189,6 +196,64 @@ namespace LegalGen.Data.Services
             var changePasswordResult = await _userManager.ChangePasswordAsync(user, oldPassword, newPassword);
 
             return changePasswordResult.Succeeded;
+        }
+
+        /// <summary>
+        /// Retrieves a user's profile based on their unique ID.
+        /// </summary>
+        /// <param name="userId">The unique identifier of the user.</param>
+        /// <returns>
+        /// A user's profile if found; otherwise, null.
+        /// </returns>
+        public async Task<UserProfile> GetUserProfileAsync(string userId)
+        {
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user != null)
+            {
+                // Map the user's properties to a UserProfileModel or return the necessary details
+                var userProfile = new UserProfile
+                {
+                    Email = user.Email,
+                    FirstName = user.FirstName,
+                    LastName = user.LastName,
+                    Organization = user.Organization,
+                    ContactDetails = user.PhoneNumber,
+                };
+                return userProfile;
+            }
+            return null; // User not found
+        }
+
+        /// <summary>
+        /// Updates a user's profile information based on the provided data.
+        /// </summary>
+        /// <param name="userId">The unique identifier of the user.</param>
+        /// <param name="model">The updated profile information.</param>
+        /// <returns>
+        /// True if the profile is updated successfully; otherwise, false.
+        /// </returns>
+        public async Task<bool> UpdateUserProfileAsync(string userId, UserProfile model)
+        {
+            // Find the user by their ID
+            var user = await _userManager.FindByIdAsync(userId);
+
+            if (user != null)
+            {
+                // Update the user's profile information
+                user.Email = model.Email;
+                user.FirstName = model.FirstName;
+                user.LastName = model.LastName;
+                user.Organization = model.Organization;
+                user.PhoneNumber = model.ContactDetails;
+
+                // Update the user using UserManager
+                var result = await _userManager.UpdateAsync(user);
+
+                return result.Succeeded;
+            }
+
+            return false; // User not found
         }
     }
 }
