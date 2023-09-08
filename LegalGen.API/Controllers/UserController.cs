@@ -149,8 +149,8 @@ namespace LegalGen.API.Controllers
         /// - 400 Bad Request: If the request is invalid or cannot be processed.
         /// </returns>
         [AllowAnonymous]
-        [HttpPost("forget-password")]
-        public async Task<IActionResult> ForgetPassword([Required] string email)
+        [HttpPost("forget-password/{email}")]
+        public async Task<IActionResult> ForgetPassword([FromRoute] string email)
         {
             var user = await _userService.GetUserByEmailAsync(email);
             if (user != null)
@@ -358,6 +358,33 @@ namespace LegalGen.API.Controllers
                         new Response { Status = "Error", Message = "Profile update failed" });
             }
         }
+
+        /// <summary>
+        /// Retrieves the user's ID from the JWT token's claims and returns it as a response.
+        /// </summary>
+        /// <returns>
+        /// If the user's ID is found in the token's claims, it returns a 200 OK response with the user's ID.
+        /// If the user's ID is not found, it returns a 404 NotFound response.
+        /// </returns>
+        [HttpGet("UserId")]
+        public IActionResult GetUserId()
+        {
+            // Retrieve the user's claims from the JWT token
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier);
+
+            if (userIdClaim != null)
+            {
+                // Get the UserId from the claim
+                var userId = userIdClaim.Value;
+                return Ok(userId);
+            }
+            else
+            {
+                return NotFound("UserId not found");
+            }
+        }
+
+
 
         /// <summary>
         /// Signs the user out of the application.
