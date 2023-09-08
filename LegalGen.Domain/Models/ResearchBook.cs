@@ -21,5 +21,7 @@ namespace LegalGen.Domain.Models
         public LegalGenUser User { get; set; }
         public ICollection<LegalInformation> LegalInformation { get; set; }
 
+        public ICollection<ResearchBookShare> UserAssignments { get; set; }
+
     }
 }

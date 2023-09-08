@@ -544,5 +544,48 @@ namespace LegalGen.API.Controllers
 
         #endregion Filter Serch Result
 
+        #region ReseachBook Share 
+
+        /// <summary>
+        /// Shares a research book with a list of users.
+        /// </summary>
+        /// <param name="bookId">The ID of the research book to be shared.</param>
+        /// <param name="userIds">A list of user IDs to share the book with.</param>
+        /// <returns>An IActionResult representing the result of the operation.</returns>
+        [HttpPost("share/{bookId}")]
+        public async Task<IActionResult> ShareBook(int bookId, [FromBody] List<string> userIds)
+        {
+            try
+            {
+                await _researchBookService.ShareBookWithUsersAsync(bookId, userIds);
+
+                var apiResponse = new ApiResponse<string>
+                {
+                    Message = "Book shared successfully.",
+                    Data = null,
+                    StatusCode = 200
+                };
+
+                _logger.LogInformation("Book shared successfully.");
+
+                return Ok(apiResponse);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError($"Error: {ex.Message}");
+
+                var errorResponse = new ApiResponse<string>
+                {
+                    Message = $"Error: {ex.Message}",
+                    Data = null,
+                    StatusCode = 500
+                };
+
+                return StatusCode(errorResponse.StatusCode, errorResponse);
+            }
+        }
+
+        #endregion ReseachBook Share
+
     }
 }

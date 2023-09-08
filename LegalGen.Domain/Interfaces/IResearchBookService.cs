@@ -42,7 +42,19 @@ namespace LegalGen.Domain.Interfaces
         /// <returns>True if the legal information was deleted successfully; otherwise, false.</returns>
         Task<bool> DeleteLegalInformationByResearchBookIdAsync(int researchBookId, int legalInformationId);
 
-
+        /// <summary>
+        /// Searches for legal information within research books based on specified search criteria.
+        /// </summary>
+        /// <param name="criteria">The search criteria including document type, title, and date.</param>
+        /// <returns>An asynchronous task that represents the operation and returns a collection of matching legal information.</returns>
         Task<IEnumerable<LegalInformation>> SearchResearchBooksAsync(SearchCriteria criteria);
+
+        /// <summary>
+        /// Shares a research book with a list of users identified by their user IDs.
+        /// </summary>
+        /// <param name="bookId">The ID of the research book to be shared.</param>
+        /// <param name="userIds">A list of user IDs representing the users with whom the book will be shared.</param>
+        /// <returns>An asynchronous task representing the operation.</returns>
+        Task ShareBookWithUsersAsync(int bookId, List<string> userIds);
     }
 }

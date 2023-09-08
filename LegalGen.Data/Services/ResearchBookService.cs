@@ -110,6 +110,11 @@ namespace LegalGen.Data.Services
             return true;
         }
 
+        /// <summary>
+        /// Searches for legal information within research books based on specified search criteria.
+        /// </summary>
+        /// <param name="criteria">The search criteria including document type, title, and date.</param>
+        /// <returns>An asynchronous task that represents the operation and returns a collection of matching legal information.</returns>
         public async Task<IEnumerable<LegalInformation>> SearchResearchBooksAsync(SearchCriteria criteria)
         {
             var query = _context.ResearchBooks.SelectMany(book => book.LegalInformation).AsQueryable();
@@ -131,6 +136,43 @@ namespace LegalGen.Data.Services
             }
 
             return await query.ToListAsync();
+        }
+
+        /// <summary>
+        /// Shares a research book with a list of users identified by their user IDs.
+        /// </summary>
+        /// <param name="bookId">The ID of the research book to be shared.</param>
+        /// <param name="userIds">A list of user IDs representing the users with whom the book will be shared.</param>
+        /// <returns>An asynchronous task representing the operation.</returns>
+        public async Task ShareBookWithUsersAsync(int bookId, List<string> userIds)
+        {
+            var book = await _context.ResearchBooks.FindAsync(bookId);
+
+            if (book == null)
+            {
+                // Handle the case where the book is not found.
+                return;
+            }
+
+            foreach (var userId in userIds)
+            {
+                var user = await _context.Users.FindAsync(userId);
+
+                if (user != null)
+                {
+                    // Create a UserResearchBookAssignment to share the book with the user.
+                    var assignment = new ResearchBookShare
+                    {
+                        ResearchBook = book,
+                        User = user
+                    };
+
+                    _context.ResearchBookShares.Add(assignment);
+                }
+                // Handle the case where the user is not found.
+            }
+
+            await _context.SaveChangesAsync();
         }
     }
 }
