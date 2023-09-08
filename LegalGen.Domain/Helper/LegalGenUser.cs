@@ -18,5 +18,7 @@ namespace LegalGen.Domain.Helper
         public ICollection<ResearchBook> ResearchBooks { get; set; }
         public ICollection<AiChat> AiChats { get; set; }
 
+        public ICollection<ResearchBookShare> BookAssignments { get; set; }
+
     }
 }
